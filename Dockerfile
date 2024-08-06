@@ -1,4 +1,10 @@
 # Start with base image
+FROM openjdk:8-jdk-alpine AS build
+WORKDIR /app
+COPY ./ /app
+RUN mvn install -DskipTests=true
+
+# Start with base image
 FROM openjdk:8-jdk-alpine
 
 # Add Maintainer Info
@@ -17,10 +23,10 @@ ENV DOUBAN_BOOK_CACHE_EXPIRE="24h"
 ENV DOUBAN_PROXY_IMAGE_URL="true"
 
 # Application Jar File
-ARG JAR_FILE=target/simple-boot-douban-api-0.9.1-SNAPSHOT.jar
+ARG JAR_FILE=/app/target/simple-boot-douban-api-*.jar
 
 # Add Application Jar File to the Container
-ADD ${JAR_FILE} simple-boot-douban-api.jar
+COPY --from=build ${JAR_FILE} simple-boot-douban-api.jar
 
 # Run the JAR file
 ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -jar /simple-boot-douban-api.jar"]
