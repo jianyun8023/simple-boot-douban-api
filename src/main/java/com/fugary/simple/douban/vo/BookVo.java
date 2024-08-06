@@ -21,6 +21,8 @@ public class BookVo implements Serializable {
     private String title;
     @JsonProperty("origin_title")
     private String originTitle;
+    @JsonProperty("sub_title")
+    private String subTitle;
     private List<String> author;
     private List<String> translator;
     private String summary;

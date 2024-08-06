@@ -78,6 +78,8 @@ public class DoubanBookHtmlParseProvider implements BookHtmlParseProvider {
                     }
                 } else if (text.startsWith("原作名")) {
                     bookVo.setOriginTitle(getInfo(element));
+                } else if (text.startsWith("副标题")) {
+                    bookVo.setSubTitle(getInfo(element));
                 } else if (text.startsWith("出版社")) {
                     bookVo.setPublisher(getInfoOrNext(element));
                 } else if (text.startsWith("出版年")) {
