@@ -23,10 +23,10 @@ ENV DOUBAN_BOOK_CACHE_EXPIRE="24h"
 ENV DOUBAN_PROXY_IMAGE_URL="true"
 
 # Application Jar File
-ARG JAR_FILE=/app/target/simple-boot-douban-api-*.jar
+ARG JAR_FILE=target/simple-boot-douban-api-*.jar
 
 # Add Application Jar File to the Container
-COPY --from=build ${JAR_FILE} simple-boot-douban-api.jar
+COPY ${JAR_FILE} simple-boot-douban-api.jar
 
 # Run the JAR file
 ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -jar /simple-boot-douban-api.jar"]
