@@ -2,7 +2,7 @@
 FROM vegardit/graalvm-maven:latest-java17 AS build
 WORKDIR /app
 COPY ./target/simple-boot-douban-api*.jar /app/simple-boot-douban-api.jar
-RUN native-image -jar /app/simple-boot-douban-api.jar && \
+RUN native-image --no-server --static -jar /app/simple-boot-douban-api.jar && \
     upx /app/simple-boot-douban-api
 # Start with base image
 FROM debian:bookworm-slim
