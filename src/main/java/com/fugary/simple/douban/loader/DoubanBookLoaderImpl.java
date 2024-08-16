@@ -28,7 +28,7 @@ public class DoubanBookLoaderImpl implements BookLoader {
     @Autowired
     private DoubanApiConfigProperties doubanApiConfigProperties;
 
-    @Cacheable(cacheNames = "dobanBook", sync = true)
+    @Cacheable(cacheNames = "dobanBook")
     @Override
     public BookVo loadBook(String bookUrl) {
         HttpHeaders headers = new HttpHeaders();
@@ -39,7 +39,7 @@ public class DoubanBookLoaderImpl implements BookLoader {
         return bookHtmlParseProvider.parse(bookUrl, bookStr);
     }
 
-    @Cacheable(cacheNames = "doubanImage", sync = true)
+    @Cacheable(cacheNames = "doubanImage")
     @Override
     public byte[] loadImage(String imageUrl) {
         HttpHeaders headers = new HttpHeaders();

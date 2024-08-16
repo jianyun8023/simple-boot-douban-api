@@ -1,14 +1,15 @@
 # Start with base image
-FROM openjdk:8-jdk-alpine AS build
+FROM vegardit/graalvm-maven:latest-java17 AS build
 WORKDIR /app
 COPY ./ /app
-RUN mvn install -DskipTests=true
-
+RUN --mount=type=cache,id=maven,target=/mvn/store mvn -Dmaven.repo.local=/mvn/store -Pnative -DskipTests=true clean  native:compile
+RUN upx /app/target/simple-boot-douban-api
 # Start with base image
-FROM openjdk:8-jdk-alpine
+FROM debian:bookworm-slim
 
+WORKDIR /app
 # Add Maintainer Info
-LABEL maintainer="fugary"
+LABEL maintainer="jianyun8023"
 
 # Add a temporary volume
 VOLUME /tmp
@@ -22,11 +23,8 @@ ENV DOUBAN_BOOK_CACHE_SIZE="1000"
 ENV DOUBAN_BOOK_CACHE_EXPIRE="24h"
 ENV DOUBAN_PROXY_IMAGE_URL="true"
 
-# Application Jar File
-ARG JAR_FILE=target/simple-boot-douban-api-*.jar
-
 # Add Application Jar File to the Container
-COPY ${JAR_FILE} simple-boot-douban-api.jar
+COPY --from=build /app/target/simple-boot-douban-api simple-boot-douban-api
 
 # Run the JAR file
-ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -jar /simple-boot-douban-api.jar"]
+ENTRYPOINT ["bash","-c","/app/simple-boot-douban-api"]
