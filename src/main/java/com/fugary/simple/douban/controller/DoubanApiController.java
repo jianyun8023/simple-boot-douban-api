@@ -26,6 +26,8 @@ import jakarta.ws.rs.core.Context;
 import org.eclipse.microprofile.context.ManagedExecutor;
 
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -61,6 +63,9 @@ public class DoubanApiController {
     @GET
     @Path("/search")
     public ResultVo searchBook(@QueryParam("q") String searchText) throws ExecutionException, InterruptedException {
+        if (StringUtils.isBlank(searchText)) {
+            throw new BadRequestException("Query parameter 'q' is required");
+        }
         if (searchText.matches("\\d{10,}")) {
             return searchIsbn(searchText);
         }
@@ -103,9 +108,12 @@ public class DoubanApiController {
      * @return
      */
     protected List<Element> searchBookElements(String searchText, String catType) {
+        String encodedSearchText = URLEncoder.encode(searchText, StandardCharsets.UTF_8);
+        String encodedCatType = URLEncoder.encode(catType, StandardCharsets.UTF_8);
+
         String url = doubanApiConfigProperties.searchUrl()
-                .replace("{searchType}", catType)
-                .replace("{searchText}", searchText);
+                .replace("{searchType}", encodedCatType)
+                .replace("{searchText}", encodedSearchText);
 
         String resultStr = client.target(url)
                 .request()
@@ -165,12 +173,6 @@ public class DoubanApiController {
             if (baseUri.getPort() != -1) {
                  builder.port(baseUri.getPort());
             }
-
-            String template = builder.toTemplate(); // kept for checking against current, but maybe safer to check if it already contains the proxy path
-            // Better check: does it look like our proxy URL?
-            // Actually, the intent of original code was: "if the image URL is NOT already pointing to OUR proxy, then rewrite it".
-            // The original code used builder.toUriString() which resolves placeholders.
-            // Here we don't have placeholders in builder yet.
 
             String currentProxyBase = builder.build().toString();
 
