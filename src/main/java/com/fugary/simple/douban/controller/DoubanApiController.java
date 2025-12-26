@@ -19,15 +19,12 @@ import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
 import jakarta.ws.rs.core.Context;
 import org.eclipse.microprofile.context.ManagedExecutor;
 
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -108,14 +105,9 @@ public class DoubanApiController {
      * @return
      */
     protected List<Element> searchBookElements(String searchText, String catType) {
-        String encodedSearchText = URLEncoder.encode(searchText, StandardCharsets.UTF_8);
-        String encodedCatType = URLEncoder.encode(catType, StandardCharsets.UTF_8);
-
-        String url = doubanApiConfigProperties.searchUrl()
-                .replace("{searchType}", encodedCatType)
-                .replace("{searchText}", encodedSearchText);
-
-        String resultStr = client.target(url)
+        String resultStr = client.target(doubanApiConfigProperties.searchUrl())
+                .resolveTemplate("searchType", catType)
+                .resolveTemplate("searchText", searchText)
                 .request()
                 .header(HttpHeaders.USER_AGENT, HttpRequestUtils.getUserAgent())
                 .get(String.class);
@@ -145,9 +137,38 @@ public class DoubanApiController {
      */
     protected ResultVo detailResult(String urlTemplate, String id) {
         long start = System.currentTimeMillis();
-        String url = urlTemplate.replace("{id}", id).replace("{isbn}", id);
         ResultVo resultVo = new ResultVo();
-        BookVo bookVo = bookLoader.loadBook(url);
+        // Use WebTarget templating if possible, but here we construct BookLoader
+        // BookLoader takes a full URL string.
+        // We need to resolve the template first.
+        // We can use UriBuilder for this without making a request.
+
+        String url = UriBuilder.fromUri(urlTemplate)
+                .resolveTemplate("id", id)
+                .resolveTemplate("isbn", id)
+                .toTemplate(); // Wait, toTemplate returns the template string. We want the string with values.
+        // UriBuilder.build() returns a URI.
+
+        // Actually, UriBuilder.fromPath/fromUri parses templates.
+        // .build(Object...) replaces them by order or map.
+        // But here we have named parameters in the properties: {id} or {isbn}.
+        // UriBuilder supports map for buildFromMap or just build with map.
+        // But strict JAX-RS UriBuilder might not support arbitrary named params unless they are in path as {name}.
+        // The URL is full URL: https://...
+
+        // Let's stick to client.target for resolution if we were calling it directly, but here we pass the URL to loadBook.
+        // loadBook uses client.target(bookUrl).
+        // If we pass a template to loadBook, loadBook needs to handle it? No, loadBook expects a URL.
+
+        // So we need to resolve the string here.
+        // Using UriBuilder to resolve templates in a string:
+        String resolvedUrl = UriBuilder.fromUri(urlTemplate)
+                .resolveTemplate("id", id)
+                .resolveTemplate("isbn", id)
+                .build()
+                .toString();
+
+        BookVo bookVo = bookLoader.loadBook(resolvedUrl);
         if (bookVo != null) {
             resultVo.setSuccess(true);
             processBookImage(bookVo);
