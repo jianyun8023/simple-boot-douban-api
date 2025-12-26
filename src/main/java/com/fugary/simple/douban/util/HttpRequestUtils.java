@@ -1,11 +1,9 @@
 package com.fugary.simple.douban.util;
 
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpHeaders;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
-
-import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.enterprise.inject.spi.CDI;
+import io.vertx.core.http.HttpServerRequest;
 
 /**
  * @author Gary Fu
@@ -21,9 +19,12 @@ public class HttpRequestUtils {
      *
      * @return
      */
-    public static HttpServletRequest getCurrentRequest() {
-        ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        return requestAttributes != null ? requestAttributes.getRequest() : null;
+    public static HttpServerRequest getCurrentRequest() {
+        try {
+            return CDI.current().select(HttpServerRequest.class).get();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
@@ -33,7 +34,7 @@ public class HttpRequestUtils {
      * @return
      */
     public static String getHeader(String key) {
-        HttpServletRequest currentRequest = getCurrentRequest();
+        HttpServerRequest currentRequest = getCurrentRequest();
         if (currentRequest != null) {
             return currentRequest.getHeader(key);
         }
@@ -59,12 +60,12 @@ public class HttpRequestUtils {
      * @return
      */
     public static String getSchema() {
-        HttpServletRequest currentRequest = getCurrentRequest();
+        HttpServerRequest currentRequest = getCurrentRequest();
         String schema = StringUtils.EMPTY;
         if (currentRequest != null) {
             schema = currentRequest.getHeader("x-forwarded-proto");
             if (StringUtils.isBlank(schema)) {
-                schema = currentRequest.getScheme();
+                schema = currentRequest.scheme();
             }
         }
         if (StringUtils.isBlank(schema)) {
