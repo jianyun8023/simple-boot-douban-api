@@ -7,7 +7,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.stereotype.Component;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -22,7 +22,7 @@ import static com.fugary.simple.douban.util.DoubanUrlUtils.ID_PATTERN;
  * @author gary.fu
  */
 @Slf4j
-@Component
+@ApplicationScoped
 public class DoubanBookHtmlParseProvider implements BookHtmlParseProvider {
 
     private static final Pattern SERIES_PATTERN = Pattern.compile(".*/series/(\\d+)/?");

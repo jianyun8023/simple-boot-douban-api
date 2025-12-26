@@ -1,8 +1,7 @@
 package com.fugary.simple.douban.config;
 
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 import java.util.*;
 
 /**
@@ -10,22 +9,23 @@ import java.util.*;
  *
  * @author gary.fu
  */
-@ConfigurationProperties(prefix = "douban.api")
-@Data
-public class DoubanApiConfigProperties {
+@ConfigMapping(prefix = "douban.api")
+public interface DoubanApiConfigProperties {
 
-    private Map<String, String> mappings = new HashMap<>();
+    Map<String, String> mappings();
 
-    private int count = 3;
+    @WithDefault("3")
+    int count();
 
-    private String baseUrl;
+    String baseUrl();
 
-    private String searchUrl;
+    String searchUrl();
 
-    private String detailUrl;
+    String detailUrl();
 
-    private String isbnUrl;
+    String isbnUrl();
 
-    private boolean proxyImageUrl;
+    @WithDefault("true")
+    boolean proxyImageUrl();
 
 }
