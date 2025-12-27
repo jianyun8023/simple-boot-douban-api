@@ -21,6 +21,8 @@ import jakarta.ws.rs.core.HttpHeaders;
 @Slf4j
 public class DoubanBookLoaderImpl implements BookLoader {
 
+    private static final int MAX_REDIRECTS = 5;
+
     @Inject
     BookHtmlParseProvider bookHtmlParseProvider;
 
@@ -34,6 +36,14 @@ public class DoubanBookLoaderImpl implements BookLoader {
     @CacheResult(cacheName = "dobanBook")
     @Override
     public BookVo loadBook(String bookUrl) {
+        return loadBookInternal(bookUrl, 0);
+    }
+
+    private BookVo loadBookInternal(String bookUrl, int depth) {
+        if (depth > MAX_REDIRECTS) {
+            log.warn("Too many redirects for url: {}", bookUrl);
+            return null;
+        }
         Response response = client.target(bookUrl)
                 .request()
                 .header(HttpHeaders.USER_AGENT, HttpRequestUtils.getUserAgent())
@@ -44,7 +54,7 @@ public class DoubanBookLoaderImpl implements BookLoader {
             if (location != null && !location.isEmpty()) {
                 log.info("Redirecting from {} to {}", bookUrl, location);
                 response.close();
-                return loadBook(location);
+                return loadBookInternal(location, depth + 1);
             }
         }
         String bookStr = response.readEntity(String.class);
@@ -54,6 +64,14 @@ public class DoubanBookLoaderImpl implements BookLoader {
     @CacheResult(cacheName = "doubanImage")
     @Override
     public byte[] loadImage(String imageUrl) {
+        return loadImageInternal(imageUrl, 0);
+    }
+
+    private byte[] loadImageInternal(String imageUrl, int depth) {
+        if (depth > MAX_REDIRECTS) {
+            log.warn("Too many redirects for image: {}", imageUrl);
+            return null;
+        }
         try {
             Response response = client.target(imageUrl)
                     .request()
@@ -68,7 +86,7 @@ public class DoubanBookLoaderImpl implements BookLoader {
                 if (location != null && !location.isEmpty()) {
                     log.info("Image redirecting from {} to {}", imageUrl, location);
                     response.close();
-                    return loadImage(location);
+                    return loadImageInternal(location, depth + 1);
                 }
             }
         } catch (Exception e) {
