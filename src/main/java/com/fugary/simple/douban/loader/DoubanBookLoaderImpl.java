@@ -27,16 +27,27 @@ public class DoubanBookLoaderImpl implements BookLoader {
     @Inject
     DoubanApiConfigProperties doubanApiConfigProperties;
 
-    private Client client = ClientBuilder.newClient();
+    private Client client = ClientBuilder.newBuilder()
+            .property("http.redirects", true)
+            .build();
 
     @CacheResult(cacheName = "dobanBook")
     @Override
     public BookVo loadBook(String bookUrl) {
-        String bookStr = client.target(bookUrl)
+        Response response = client.target(bookUrl)
                 .request()
                 .header(HttpHeaders.USER_AGENT, HttpRequestUtils.getUserAgent())
                 .header("Referer", doubanApiConfigProperties.baseUrl())
-                .get(String.class);
+                .get();
+        if (response.getStatus() == 301 || response.getStatus() == 302) {
+            String location = response.getHeaderString("Location");
+            if (location != null && !location.isEmpty()) {
+                log.info("Redirecting from {} to {}", bookUrl, location);
+                response.close();
+                return loadBook(location);
+            }
+        }
+        String bookStr = response.readEntity(String.class);
         return bookHtmlParseProvider.parse(bookUrl, bookStr);
     }
 
@@ -52,6 +63,13 @@ public class DoubanBookLoaderImpl implements BookLoader {
             if (response.getStatus() == 200) {
                 log.info("获取{}图片成功", imageUrl);
                 return response.readEntity(byte[].class);
+            } else if (response.getStatus() == 301 || response.getStatus() == 302) {
+                String location = response.getHeaderString("Location");
+                if (location != null && !location.isEmpty()) {
+                    log.info("Image redirecting from {} to {}", imageUrl, location);
+                    response.close();
+                    return loadImage(location);
+                }
             }
         } catch (Exception e) {
             log.error("获取{}图片异常: {}", imageUrl, e.getMessage());
