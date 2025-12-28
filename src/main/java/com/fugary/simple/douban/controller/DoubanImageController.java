@@ -13,7 +13,7 @@ import jakarta.enterprise.context.ApplicationScoped;
  * @author gary.fu
  */
 @Path("/")
-@ApplicationScoped
+@jakarta.inject.Singleton
 @Slf4j
 public class DoubanImageController {
 

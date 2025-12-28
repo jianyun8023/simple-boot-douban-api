@@ -21,28 +21,57 @@ import jakarta.ws.rs.core.HttpHeaders;
 @Slf4j
 public class DoubanBookLoaderImpl implements BookLoader {
 
+    private static final int MAX_REDIRECTS = 5;
+
     @Inject
     BookHtmlParseProvider bookHtmlParseProvider;
 
     @Inject
     DoubanApiConfigProperties doubanApiConfigProperties;
 
-    private Client client = ClientBuilder.newClient();
+    private Client client = ClientBuilder.newBuilder()
+            .property("http.redirects", true)
+            .build();
 
     @CacheResult(cacheName = "dobanBook")
     @Override
     public BookVo loadBook(String bookUrl) {
-        String bookStr = client.target(bookUrl)
+        return loadBookInternal(bookUrl, 0);
+    }
+
+    private BookVo loadBookInternal(String bookUrl, int depth) {
+        if (depth > MAX_REDIRECTS) {
+            log.warn("Too many redirects for url: {}", bookUrl);
+            return null;
+        }
+        Response response = client.target(bookUrl)
                 .request()
                 .header(HttpHeaders.USER_AGENT, HttpRequestUtils.getUserAgent())
                 .header("Referer", doubanApiConfigProperties.baseUrl())
-                .get(String.class);
+                .get();
+        if (response.getStatus() == 301 || response.getStatus() == 302) {
+            String location = response.getHeaderString("Location");
+            if (location != null && !location.isEmpty()) {
+                log.info("Redirecting from {} to {}", bookUrl, location);
+                response.close();
+                return loadBookInternal(location, depth + 1);
+            }
+        }
+        String bookStr = response.readEntity(String.class);
         return bookHtmlParseProvider.parse(bookUrl, bookStr);
     }
 
     @CacheResult(cacheName = "doubanImage")
     @Override
     public byte[] loadImage(String imageUrl) {
+        return loadImageInternal(imageUrl, 0);
+    }
+
+    private byte[] loadImageInternal(String imageUrl, int depth) {
+        if (depth > MAX_REDIRECTS) {
+            log.warn("Too many redirects for image: {}", imageUrl);
+            return null;
+        }
         try {
             Response response = client.target(imageUrl)
                     .request()
@@ -52,6 +81,13 @@ public class DoubanBookLoaderImpl implements BookLoader {
             if (response.getStatus() == 200) {
                 log.info("获取{}图片成功", imageUrl);
                 return response.readEntity(byte[].class);
+            } else if (response.getStatus() == 301 || response.getStatus() == 302) {
+                String location = response.getHeaderString("Location");
+                if (location != null && !location.isEmpty()) {
+                    log.info("Image redirecting from {} to {}", imageUrl, location);
+                    response.close();
+                    return loadImageInternal(location, depth + 1);
+                }
             }
         } catch (Exception e) {
             log.error("获取{}图片异常: {}", imageUrl, e.getMessage());
