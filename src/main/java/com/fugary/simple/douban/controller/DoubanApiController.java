@@ -6,18 +6,14 @@ import com.fugary.simple.douban.util.DoubanUrlUtils;
 import com.fugary.simple.douban.util.HttpRequestUtils;
 import com.fugary.simple.douban.vo.BookVo;
 import com.fugary.simple.douban.vo.ResultVo;
+import com.fugary.simple.douban.service.DoubanHtmlService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.client.Client;
-import jakarta.ws.rs.client.ClientBuilder;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.UriBuilder;
 import jakarta.ws.rs.core.UriInfo;
@@ -55,7 +51,8 @@ public class DoubanApiController {
     @Inject
     ManagedExecutor managedExecutor;
 
-    private Client client = ClientBuilder.newClient();
+    @Inject
+    DoubanHtmlService doubanHtmlService;
 
     @GET
     @Path("/search")
@@ -71,7 +68,7 @@ public class DoubanApiController {
         resultVo.setBooks(new ArrayList<>());
 
         String catType = doubanApiConfigProperties.mappings().get("book");
-        List<Element> bookElements = searchBookElements(searchText, catType); // 按照网页查询，应该速度稍慢
+        List<Element> bookElements = doubanHtmlService.searchBookElements(searchText, catType); // 按照网页查询，应该速度稍慢
         log.info("查询列表{}条耗时{}ms", bookElements.size(), System.currentTimeMillis() - start);
         List<CompletableFuture<BookVo>> list = new ArrayList<>();
 
@@ -95,25 +92,6 @@ public class DoubanApiController {
         CompletableFuture.allOf(list.toArray(new CompletableFuture[0])).get();
         log.info("查询书籍{}条完成耗时{}ms", list.size(), System.currentTimeMillis() - start);
         return resultVo;
-    }
-
-    /**
-     * 列表页从html中获取
-     *
-     * @param searchText
-     * @param catType
-     * @return
-     */
-    protected List<Element> searchBookElements(String searchText, String catType) {
-        String resultStr = client.target(doubanApiConfigProperties.searchUrl())
-                .resolveTemplate("searchType", catType)
-                .resolveTemplate("searchText", searchText)
-                .request()
-                .header(HttpHeaders.USER_AGENT, HttpRequestUtils.getUserAgent())
-                .get(String.class);
-
-        Document doc = Jsoup.parse(resultStr);
-        return doc.select("a.nbg");
     }
 
     @GET
