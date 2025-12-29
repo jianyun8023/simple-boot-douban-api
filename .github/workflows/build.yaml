@@ -38,12 +38,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'adopt'
-          java-version: '17'
-
       - name: Create Maven repository directory
         run: |
           mkdir -p ~/.m2/repository
@@ -55,9 +49,9 @@ jobs:
         with:
           path: ~/.m2/repository
           # Added platform to cache key to avoid collisions/issues between architectures
-          key: ${{ runner.os }}-${{ matrix.platform }}-maven-${{ hashFiles('**/pom.xml') }}
+          key: ${{ runner.os }}-${{ env.PLATFORM_PAIR }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.platform }}-maven-
+            ${{ runner.os }}-${{ env.PLATFORM_PAIR }}-maven-
 
       - name: inject Maven packages cache into docker
         uses: reproducible-containers/buildkit-cache-dance@v3.1.0
