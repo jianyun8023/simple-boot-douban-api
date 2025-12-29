@@ -1,5 +1,5 @@
 # Start with base image
-FROM vegardit/graalvm-maven:latest-java17 AS build
+FROM vegardit/graalvm-maven:latest-java21 AS build
 WORKDIR /app
 COPY ./ /app
 RUN --mount=type=cache,id=maven,target=/mvn/store mvn -Dmaven.repo.local=/mvn/store -Pnative -DskipTests=true clean package
