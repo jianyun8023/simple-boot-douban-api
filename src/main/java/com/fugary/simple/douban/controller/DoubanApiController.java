@@ -34,7 +34,7 @@ import java.util.concurrent.ExecutionException;
  * @author gary.fu
  */
 @Slf4j
-@Path("/v2")
+@Path("/v2/book")
 @ApplicationScoped
 @Produces(MediaType.APPLICATION_JSON)
 public class DoubanApiController {
@@ -55,7 +55,7 @@ public class DoubanApiController {
     DoubanHtmlService doubanHtmlService;
 
     @GET
-    @Path("/book/search")
+    @Path("/search")
     public ResultVo searchBook(@QueryParam("q") String searchText) throws ExecutionException, InterruptedException {
         if (StringUtils.isBlank(searchText)) {
             throw new BadRequestException("Query parameter 'q' is required");
@@ -95,20 +95,14 @@ public class DoubanApiController {
     }
 
     @GET
-    @Path("/book/isbn/{isbn}")
+    @Path("/isbn/{isbn}")
     public ResultVo searchIsbn(@PathParam("isbn") String isbn) {
         return detailResult(doubanApiConfigProperties.isbnUrl(), isbn);
     }
 
     @GET
-    @Path("/book/{id}")
-    public ResultVo detail(@PathParam("id") String id) {
-        return detailResult(doubanApiConfigProperties.detailUrl(), id);
-    }
-
-    @GET
     @Path("/{id}")
-    public ResultVo detailV2(@PathParam("id") String id) {
+    public ResultVo detail(@PathParam("id") String id) {
         return detailResult(doubanApiConfigProperties.detailUrl(), id);
     }
 

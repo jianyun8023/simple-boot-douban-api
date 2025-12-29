@@ -74,16 +74,6 @@ public class DoubanApiControllerTest {
     }
 
     @Test
-    public void testDetailV2() {
-        // This is the new path we want to support
-        given()
-                .when().get("/v2/1896753")
-                .then()
-                .statusCode(200)
-                .body("books[0].title", is("Test Book"));
-    }
-
-    @Test
     public void testViewCover() {
         given()
                 .queryParam("cover", "http://example.com/image.jpg")

@@ -36,15 +36,6 @@ public class DoubanApiE2ETest {
         Mockito.when(bookLoader.loadImage(anyString())).thenReturn(new byte[]{10, 20, 30});
     }
 
-    @Test
-    public void testAvailabilityOfV2IdEndpoint() {
-        // Ensures that http://host/v2/1896753 is accessible
-        given()
-                .when().get("/v2/1896753")
-                .then()
-                .statusCode(200)
-                .body("books[0].title", is("E2E Test Book"));
-    }
 
     @Test
     public void testAvailabilityOfViewCoverEndpoint() {
