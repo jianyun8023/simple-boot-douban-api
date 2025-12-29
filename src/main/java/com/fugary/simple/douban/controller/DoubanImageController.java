@@ -6,6 +6,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.enterprise.context.ApplicationScoped;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
 /**
  * Created on 2021/10/15 15:47 .<br>
@@ -15,6 +16,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 @Path("/")
 @jakarta.inject.Singleton
 @Slf4j
+@RegisterForReflection
 public class DoubanImageController {
 
     @Inject
