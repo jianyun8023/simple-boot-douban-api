@@ -1,30 +1,58 @@
-### 简单获取豆瓣BOOK的api
+# 豆瓣图书API
 
-目前使用calibre-web的时候发现豆瓣搜索元数据API已经不可用，自己写一个从网页抓取的API，只实现了简单的查询功能。
+这是一个基于Quarkus构建的豆瓣图书API，用于从豆瓣网站抓取图书信息。
 
-**注意：新版本已经不再用JS发起请求了，需要使用：https://github.com/fugary/calibre-web-douban-api**
+## API 接口
 
-### 使用Docker启动
+### 1. 搜索图书
+
+- **URL:** `/v2/book/search`
+- **Method:** `GET`
+- **Query Parameter:** `q` (搜索关键词)
+- **Example:** `http://localhost:8085/v2/book/search?q=深入理解计算机系统`
+
+### 2. 根据ISBN获取图书信息
+
+- **URL:** `/v2/book/isbn/{isbn}`
+- **Method:** `GET`
+- **Path Parameter:** `isbn` (图书的ISBN)
+- **Example:** `http://localhost:8085/v2/book/isbn/9787111559573`
+
+### 3. 根据ID获取图书信息
+
+- **URL:** `/v2/book/{id}`
+- **Method:** `GET`
+- **Path Parameter:** `id` (豆瓣图书ID)
+- **Example:** `http://localhost:8085/v2/book/27079527`
+
+## 使用Docker启动
+
+### 拉取镜像
 
 ```shell
 docker pull fugary/simple-boot-douban-api
-docker run -it -p 8085:8085 fugary/simple-boot-douban-api
 ```
-然后可以访问：
 
-http://localhost:8085/v2/book/search?q=深入理解计算机系统
-
-### 群晖calibre-web中使用
-
-下载容器并启动后，需要修改get_meta.js文件，需要进入calibre-web容器中修改。
-
-**注意：新版本已经不再用JS发起请求了，需要使用：https://github.com/fugary/calibre-web-douban-api**
+### 启动容器
 
 ```shell
-vi /calibre-web/app/cps/static/js/get_meta.js
-# 找到 var douban = "https://api.douban.com"; 替换成自己的NAS_IP地址
-var douban = "http://NAS_IP:8085";
-# 如果不熟悉vi命令，这里提供一种更快的替换的方式，使用sed命令：
-sed -i 's#https://api.douban.com#http://NAS_IP:8085#g' /calibre-web/app/cps/static/js/get_meta.js
+docker run -it -p 8085:8085 fugary/simple-boot-douban-api
 ```
-参考配置使用文档：https://fugary.com/?p=213
+
+### 自定义配置
+
+您可以通过环境变量来自定义应用的配置：
+
+- `DOUBAN_CONCURRENCY_SIZE`: 并发查询线程数 (默认: `5`)
+- `DOUBAN_BOOK_CACHE_SIZE`: 图书缓存数量 (默认: `1000`)
+- `DOUBAN_BOOK_CACHE_EXPIRE`: 图书缓存过期时间 (默认: `24h`)
+- `DOUBAN_PROXY_IMAGE_URL`: 是否代理图片地址 (默认: `true`)
+
+例如，要修改并发线程数和缓存大小，可以使用以下命令：
+
+```shell
+docker run -it -p 8085:8085 \
+  -e DOUBAN_CONCURRENCY_SIZE=10 \
+  -e DOUBAN_BOOK_CACHE_SIZE=2000 \
+  fugary/simple-boot-douban-api
+```
